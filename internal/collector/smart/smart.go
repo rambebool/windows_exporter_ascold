@@ -126,79 +126,79 @@ func (c *Collector) Build(logger *slog.Logger, _ *mi.Session) error {
 	c.healthStatusDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(types.Namespace, Name, "health_status"),
 		"SMART overall-health self-assessment test status",
-		[]string{"model", "status"},
+		[]string{"model", "serial_number", "status"},
 		nil,
 	)
 	c.temperatureDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(types.Namespace, Name, "temperature_celsius"),
 		"Current device temperature in Celsius",
-		[]string{"model"},
+		[]string{"model", "serial_number"},
 		nil,
 	)
 	c.powerOnHoursDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(types.Namespace, Name, "power_on_hours"),
 		"Total number of hours the device has been powered on",
-		[]string{"model"},
+		[]string{"model", "serial_number"},
 		nil,
 	)
 	c.powerCyclesDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(types.Namespace, Name, "power_cycles"),
 		"Total number of power cycles",
-		[]string{"model"},
+		[]string{"model", "serial_number"},
 		nil,
 	)
 	c.reallocatedSectorsDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(types.Namespace, Name, "reallocated_sectors_total"),
 		"Number of reallocated sectors (ATA SMART attribute 5)",
-		[]string{"model"},
+		[]string{"model", "serial_number"},
 		nil,
 	)
 	c.pendingSectorsDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(types.Namespace, Name, "pending_sectors_total"),
 		"Number of pending sectors awaiting reallocation (ATA SMART attribute 197)",
-		[]string{"model"},
+		[]string{"model", "serial_number"},
 		nil,
 	)
 	c.offlineUncorrectableDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(types.Namespace, Name, "offline_uncorrectable_sectors_total"),
 		"Number of offline uncorrectable sectors (ATA SMART attribute 198)",
-		[]string{"model"},
+		[]string{"model", "serial_number"},
 		nil,
 	)
 	c.nvmeDataUnitsReadDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(types.Namespace, Name, "nvme_data_units_read_total"),
 		"Number of NVMe data units read",
-		[]string{"model"},
+		[]string{"model", "serial_number"},
 		nil,
 	)
 	c.nvmeDataUnitsWrittenDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(types.Namespace, Name, "nvme_data_units_written_total"),
 		"Number of NVMe data units written",
-		[]string{"model"},
+		[]string{"model", "serial_number"},
 		nil,
 	)
 	c.nvmePercentageUsedDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(types.Namespace, Name, "nvme_percentage_used"),
 		"NVMe percentage used (wear indicator)",
-		[]string{"model"},
+		[]string{"model", "serial_number"},
 		nil,
 	)
 	c.nvmeMediaErrorsDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(types.Namespace, Name, "nvme_media_errors_total"),
 		"NVMe media errors",
-		[]string{"model"},
+		[]string{"model", "serial_number"},
 		nil,
 	)
 	c.nvmeUnsafeShutdownsDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(types.Namespace, Name, "nvme_unsafe_shutdowns_total"),
 		"NVMe unsafe shutdowns",
-		[]string{"model"},
+		[]string{"model", "serial_number"},
 		nil,
 	)
 	c.nvmeErrorLogEntriesDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(types.Namespace, Name, "nvme_error_log_entries_total"),
 		"NVMe error log entries",
-		[]string{"model"},
+		[]string{"model", "serial_number"},
 		nil,
 	)
 
@@ -237,6 +237,10 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) error {
 		if modelName == "" {
 			modelName = "unknown"
 		}
+		serialNumber := strings.TrimSpace(output.SerialNumber)
+		if serialNumber == "" {
+			serialNumber = "unknown"
+		}
 
 		ch <- prometheus.MustNewConstMetric(
 			c.infoDesc,
@@ -244,7 +248,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) error {
 			1,
 			modelName,
 			output.ModelFamily,
-			output.SerialNumber,
+			serialNumber,
 			output.FirmwareVersion,
 			output.Device.Protocol,
 			output.Device.Type,
@@ -270,6 +274,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) error {
 				prometheus.GaugeValue,
 				value,
 				modelName,
+				serialNumber,
 				candidate,
 			)
 		}
@@ -280,6 +285,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) error {
 				prometheus.GaugeValue,
 				*temp,
 				modelName,
+				serialNumber,
 			)
 		}
 
@@ -289,6 +295,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) error {
 				prometheus.GaugeValue,
 				*hours,
 				modelName,
+				serialNumber,
 			)
 		}
 
@@ -298,6 +305,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) error {
 				prometheus.GaugeValue,
 				*cycles,
 				modelName,
+				serialNumber,
 			)
 		}
 
@@ -307,6 +315,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) error {
 				prometheus.GaugeValue,
 				*value,
 				modelName,
+				serialNumber,
 			)
 		}
 
@@ -316,6 +325,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) error {
 				prometheus.GaugeValue,
 				*value,
 				modelName,
+				serialNumber,
 			)
 		}
 
@@ -325,6 +335,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) error {
 				prometheus.GaugeValue,
 				*value,
 				modelName,
+				serialNumber,
 			)
 		}
 
@@ -335,6 +346,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) error {
 					prometheus.GaugeValue,
 					*value,
 					modelName,
+					serialNumber,
 				)
 			}
 			if value := output.NVMeSmartHealthLog.DataUnitsWritten; value != nil {
@@ -343,6 +355,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) error {
 					prometheus.GaugeValue,
 					*value,
 					modelName,
+					serialNumber,
 				)
 			}
 			if value := output.NVMeSmartHealthLog.PercentageUsed; value != nil {
@@ -351,6 +364,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) error {
 					prometheus.GaugeValue,
 					*value,
 					modelName,
+					serialNumber,
 				)
 			}
 			if value := output.NVMeSmartHealthLog.MediaErrors; value != nil {
@@ -359,6 +373,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) error {
 					prometheus.GaugeValue,
 					*value,
 					modelName,
+					serialNumber,
 				)
 			}
 			if value := output.NVMeSmartHealthLog.UnsafeShutdowns; value != nil {
@@ -367,6 +382,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) error {
 					prometheus.GaugeValue,
 					*value,
 					modelName,
+					serialNumber,
 				)
 			}
 			if value := output.NVMeSmartHealthLog.NumErrLogEntries; value != nil {
@@ -375,6 +391,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) error {
 					prometheus.GaugeValue,
 					*value,
 					modelName,
+					serialNumber,
 				)
 			}
 		}
