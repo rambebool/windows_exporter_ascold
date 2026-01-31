@@ -198,7 +198,7 @@ func (c *Collector) Build(logger *slog.Logger, _ *mi.Session) error {
 	c.nvmeErrorLogEntriesDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(types.Namespace, Name, "nvme_error_log_entries_total"),
 		"NVMe error log entries",
-		[]string{"device", "model"},
+		[]string{"model"},
 		nil,
 	)
 
