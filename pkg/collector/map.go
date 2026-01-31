@@ -57,6 +57,7 @@ import (
 	"github.com/prometheus-community/windows_exporter/internal/collector/remote_fx"
 	"github.com/prometheus-community/windows_exporter/internal/collector/scheduled_task"
 	"github.com/prometheus-community/windows_exporter/internal/collector/service"
+	"github.com/prometheus-community/windows_exporter/internal/collector/smart"
 	"github.com/prometheus-community/windows_exporter/internal/collector/smb"
 	"github.com/prometheus-community/windows_exporter/internal/collector/smbclient"
 	"github.com/prometheus-community/windows_exporter/internal/collector/smtp"
@@ -116,6 +117,7 @@ var BuildersWithFlags = map[string]BuilderWithFlags[Collector]{
 	service.Name:            NewBuilderWithFlags(service.NewWithFlags),
 	smb.Name:                NewBuilderWithFlags(smb.NewWithFlags),
 	smbclient.Name:          NewBuilderWithFlags(smbclient.NewWithFlags),
+	smart.Name:              NewBuilderWithFlags(smart.NewWithFlags),
 	smtp.Name:               NewBuilderWithFlags(smtp.NewWithFlags),
 	system.Name:             NewBuilderWithFlags(system.NewWithFlags),
 	tcp.Name:                NewBuilderWithFlags(tcp.NewWithFlags),
