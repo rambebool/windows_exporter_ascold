@@ -22,7 +22,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/alecthomas/kingpin/v2"
@@ -110,9 +112,9 @@ func (c *Collector) Build(logger *slog.Logger, _ *mi.Session) error {
 		c.config.SmartctlPath = ConfigDefaults.SmartctlPath
 	}
 
-	smartctlPath, err := exec.LookPath(c.config.SmartctlPath)
+	smartctlPath, err := resolveSmartctlPath(c.config.SmartctlPath)
 	if err != nil {
-		return fmt.Errorf("failed to find smartctl executable: %w", err)
+		return err
 	}
 
 	c.smartctlPath = smartctlPath
@@ -203,6 +205,49 @@ func (c *Collector) Build(logger *slog.Logger, _ *mi.Session) error {
 	)
 
 	return nil
+}
+
+func resolveSmartctlPath(path string) (string, error) {
+	if path == "" {
+		path = ConfigDefaults.SmartctlPath
+	}
+
+	if filepath.IsAbs(path) {
+		if _, err := os.Stat(path); err != nil {
+			return "", fmt.Errorf("failed to find smartctl executable at %q: %w", path, err)
+		}
+
+		return path, nil
+	}
+
+	smartctlPath, err := exec.LookPath(path)
+	if err == nil {
+		return smartctlPath, nil
+	}
+
+	exePath, exeErr := os.Executable()
+	if exeErr != nil {
+		return "", fmt.Errorf("failed to find smartctl executable %q: %w", path, err)
+	}
+
+	candidates := []string{
+		filepath.Join(filepath.Dir(exePath), path),
+		filepath.Join(os.Getenv("ProgramFiles"), "smartmontools", "bin", "smartctl.exe"),
+		filepath.Join(os.Getenv("ProgramFiles(x86)"), "smartmontools", "bin", "smartctl.exe"),
+		filepath.Join(string(os.Getenv("SystemDrive")), "smartmontools", "bin", "smartctl.exe"),
+		filepath.Join(os.Getenv("SystemRoot"), "System32", "smartmontools", "bin", "smartctl.exe"),
+	}
+
+	for _, candidate := range candidates {
+		if candidate == "" {
+			continue
+		}
+		if _, statErr := os.Stat(candidate); statErr == nil {
+			return candidate, nil
+		}
+	}
+
+	return "", fmt.Errorf("failed to find smartctl executable %q (searched PATH, exporter directory, and standard install paths): %w", path, err)
 }
 
 func (c *Collector) Collect(ch chan<- prometheus.Metric) error {
