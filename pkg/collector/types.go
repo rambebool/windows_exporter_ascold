@@ -26,7 +26,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-const DefaultCollectors = "cpu,memory,logical_disk,physical_disk,net,os,service,system,smart"
+const DefaultCollectors = "cpu,cpu_info,diskdrive,gpu,license,logical_disk,memory,net,os,physical_disk,smart,update"
 
 type Collection struct {
 	collectors    Map
